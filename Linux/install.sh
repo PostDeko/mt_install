@@ -388,7 +388,7 @@ function create_mt_folder() {
 #   mkdir "$default_user_directory/$mt_folder"
 #   color_echo title "$(display_hint "h_create_mt_folder_install"): $default_user_directory/$mt_folder"
 # }
-  mt_folder="MoonTrader"
+  mt_folder="mt"
   if [ -d "$default_user_directory/$mt_folder" ]; then
     rm -rf "$default_user_directory/$mt_folder"
   fi
@@ -431,7 +431,7 @@ function setup_firewall() {
     iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
     iptables -A INPUT -m state --state INVALID -j DROP
     iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
-    iptables -A INPUT -p udp --dport 4242 -j ACCEPT
+    iptables -A INPUT -p udp --dport 42422 -j ACCEPT
     iptables -A INPUT -p tcp --dport ssh -j ACCEPT
     iptables -A INPUT -i lo -j ACCEPT
     iptables -A INPUT -j DROP
@@ -473,8 +473,8 @@ function install_mt() {
     echo -e "    $default_user_directory/$mt_folder/MTCore" >>$default_user_directory/$mt_folder/start_mt.sh
     echo -e "fi" >>$default_user_directory/$mt_folder/start_mt.sh
 
-    rm /usr/bin/MoonTrader >/dev/null 2>&1
-    ln -s "$default_user_directory/$mt_folder/start_mt.sh" /usr/bin/MoonTrader
+    rm /usr/bin/mt >/dev/null 2>&1
+    ln -s "$default_user_directory/$mt_folder/start_mt.sh" /usr/bin/mt
   fi
   chown -R $default_user:$default_user "$default_user_directory/$mt_folder"
   color_echo info "$(display_hint "h_install_mt_complete")"
@@ -504,7 +504,7 @@ color_echo info "$(display_hint "h_complete_install_dir"): $default_user_directo
 color_echo info "$(display_hint "h_complete_install_firewall"): Ping,SSH,4242udp"
 color_echo info "$(display_hint "h_complete_install_fail2ban")"
 color_echo warning "$(display_hint "h_complete_install_waring")"
-color_echo info "$(display_hint "h_complete_install_start"): MoonTrader"
+color_echo info "$(display_hint "h_complete_install_start"): mt"
 color_echo warning "$(display_hint "h_complete_install_reboot")"
 read -n 1
 reboot
