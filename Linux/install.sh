@@ -326,6 +326,8 @@ function install_packages() {
     chrony
     htop
     mc
+    vim
+    screen
     tmux
     iptables-persistent
     psmisc
@@ -443,7 +445,7 @@ function setup_time() {
 
 # Функция включения и настройка firewall
 function setup_firewall() {
-  if ! iptables -nL | grep 4242 >/dev/null 2>&1; then
+  if ! iptables -nL | grep 42422 >/dev/null 2>&1; then
     color_echo title "$(display_hint "h_setup_firewall_title")"
     iptables -F
     iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
@@ -454,9 +456,9 @@ function setup_firewall() {
     iptables -A INPUT -i lo -j ACCEPT
     iptables -A INPUT -j DROP
     netfilter-persistent save
-    color_echo title "$(display_hint "h_setup_firewall_setup"): Ping,SSH,4242udp"
+    color_echo title "$(display_hint "h_setup_firewall_setup"): Ping,SSH,42422udp"
   else
-    color_echo title "$(display_hint "h_setup_firewall_enabled"): Ping,SSH,4242udp"
+    color_echo title "$(display_hint "h_setup_firewall_enabled"): Ping,SSH,42422udp"
   fi
 }
 
