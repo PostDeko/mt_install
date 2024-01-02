@@ -190,6 +190,8 @@ function check_os() {
         OS_NAME="Debian 10"
       elif [ "$VERSION_ID" = "11" ]; then
         OS_NAME="Debian 11"
+      elif [ "$VERSION_ID" = "12" ]; then
+        OS_NAME="Debian 12"
       fi
     elif [ "$ID" = "ubuntu" ]; then
       if [ "$VERSION_ID" = "20.04" ]; then
@@ -312,6 +314,8 @@ function install_packages() {
     wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
   elif [ "$OS_NAME" == "Debian 11" ]; then
     wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+  elif [ "$OS_NAME" == "Debian 12" ]; then
+    wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
   elif [ "$OS_NAME" == "Ubuntu 20.04" ]; then
     wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
   elif [ "$OS_NAME" == "Ubuntu 22.04" ]; then
