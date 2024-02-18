@@ -310,21 +310,6 @@ function select_installation() {
 function install_packages() {
   color_echo title "$(display_hint "h_install_packages_title")"
 
-  if [ "$OS_NAME" == "Debian 10" ]; then
-    wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  elif [ "$OS_NAME" == "Debian 11" ]; then
-    wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  elif [ "$OS_NAME" == "Debian 12" ]; then
-    wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  elif [ "$OS_NAME" == "Ubuntu 20.04" ]; then
-    wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  elif [ "$OS_NAME" == "Ubuntu 22.04" ]; then
-    wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  fi
-  dpkg -i packages-microsoft-prod.deb
-  rm packages-microsoft-prod.deb
-  apt update >/dev/null 2>&1
-
   add_pkgs=(
     fail2ban
     chrony
@@ -339,9 +324,29 @@ function install_packages() {
     libtommath1
     p7zip-full
     apt-transport-https
-    dotnet-sdk-6.0
-    dotnet-sdk-7.0
   )
+
+  if [ $CPU_ARCH == "AMD64" ]; then
+    if [ "$OS_NAME" == "Debian 10" ]; then
+      wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    elif [ "$OS_NAME" == "Debian 11" ]; then
+      wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    elif [ "$OS_NAME" == "Debian 12" ]; then
+      wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    elif [ "$OS_NAME" == "Ubuntu 20.04" ]; then
+      wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    elif [ "$OS_NAME" == "Ubuntu 22.04" ]; then
+      wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    fi
+    dpkg -i packages-microsoft-prod.deb
+    rm packages-microsoft-prod.deb
+    apt update >/dev/null 2>&1
+
+    add_pkgs+=(
+      dotnet-sdk-6.0
+      dotnet-sdk-7.0
+    )
+  fi
 
   for pkg in "${add_pkgs[@]}"; do
     if ! dpkg -s $pkg >/dev/null 2>&1; then
