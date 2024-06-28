@@ -217,7 +217,9 @@ function check_os() {
             fi
         else
           if [ "$ID" = "debian" ]; then
-            if [ "$VERSION_ID" = "12" ]; then
+            if [ "$VERSION_ID" = "11" ]; then
+                OS_NAME="Debian 11"
+                elif [ "$VERSION_ID" = "12" ]; then
                 OS_NAME="Debian 12"
             else
               log error "$(extract_tips "h_check_os_wrong")"
