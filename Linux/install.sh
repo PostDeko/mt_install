@@ -2,7 +2,7 @@
 
 declare -A tips=(
     ["h_check_os_valid"]='{"en":"Current operating system","ua":"Поточна операційна система","ru":"Текущая операционная система","es":"Sistema operativo actual"}'
-    ["h_check_os_wrong"]='{"en":"This script only supports Debian10+ and Ubuntu20+ operating systems","ua":"Цей скрипт підтримує тільки операційні системи Debian10+ і Ubuntu20+","ru":"Этот скрипт поддерживает только операционные системы Debian10+ и Ubuntu20+","es":"Este script solo es compatible con los sistemas operativos Debian10+ y Ubuntu20+"}'
+    ["h_check_os_wrong"]='{"en":"This script only supports Ubuntu20+ operating systems","ua":"Цей скрипт підтримує тільки операційні системи Ubuntu20+","ru":"Этот скрипт поддерживает только операционные системы Ubuntu20+","es":"Este script solo es compatible con los sistemas operativos Ubuntu20+"}'
     ["h_check_arch_wrong"]='{"en":"This script only supports AMD64 and ARM architectures","ua":"Цей скрипт підтримує тільки архітектури AMD64 і ARM","ru":"Этот скрипт поддерживает только архитектуры AMD64 и ARM","es":"Este script solo es compatible con las arquitecturas AMD64 y ARM"}'
     ["h_check_arch_valid"]='{"en":"Current architecture","ua":"Поточна архітектура","ru":"Текущая архитектура","es":"Arquitectura actual"}'
     
@@ -203,28 +203,6 @@ function log {
 # Функция проверки операционной системы
 # Return: $(check_os)
 function check_os() {
-  if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    if [ "$ID" = "debian" ]; then
-      if [ "$VERSION_ID" = "10" ]; then
-        OS_NAME="Debian 10"
-      elif [ "$VERSION_ID" = "11" ]; then
-        OS_NAME="Debian 11"
-      elif [ "$VERSION_ID" = "12" ]; then
-        OS_NAME="Debian 12"
-      fi
-    elif [ "$ID" = "ubuntu" ]; then
-      if [ "$VERSION_ID" = "20.04" ]; then
-        OS_NAME="Ubuntu 20.04"
-      elif [ "$VERSION_ID" = "22.04" ]; then
-        OS_NAME="Ubuntu 22.04"
-      fi
-    else
-      color_echo error "$(display_hint "h_check_os_wrong")"
-      exit 1
-    fi
-    color_echo title "$(display_hint "h_check_os_valid"): $OS_NAME"
-  fi
     if [ -f /etc/os-release ]; then
         source /etc/os-release
         if [ "$ID" = "ubuntu" ]; then
@@ -255,167 +233,6 @@ function check_arch() {
 
 # Функция проверки на запуск от root
 function check_root {
-  if [ "$(id -u)" != "0" ]; then
-    if [[ $OS_NAME == *"Debian"* ]]; then
-      color_echo error "$(display_hint "h_check_root_wrong")"
-      # color_echo cyan "su -"
-      color_echo info "$(display_hint "h_exit_error")"
-      exit 1
-    fi
-    if [[ $OS_NAME == *"Ubuntu"* ]]; then
-      color_echo error "$(display_hint "h_check_root_wrong")"
-      # color_echo cyan "sudo su"
-      color_echo info "$(display_hint "h_exit_error")"
-      exit 1
-    fi
-  fi
-}
-
-# Функция выбора пользователя
-# Return
-# default_user - user
-# default_user_directory - home directory of default_user
-function select_user() {
-  last_login_user=$(last pts/0 -1 | awk '{print $1; exit}')
-  list_usrers=($(awk -F: '($3>=1000)&&($1!="nobody"){print $1}' /etc/passwd | paste -sd " "))
-  for list_user in "${list_usrers[@]}" "root"; do
-    if [[ "$list_user" == *"$last_login_user"* ]]; then
-      default_user=$list_user
-      break
-    fi
-  done
-  default_user_directory=$(eval echo ~$default_user)
-  color_echo title "$(display_hint "h_select_user_name"): $default_user"
-  color_echo title "$(display_hint "h_select_user_directory"): $default_user_directory"
-}
-
-# Функция выбора типа установки
-# Return
-# install_type - тип установки
-# mt_link - ссылка на скачивание MoonTrader
-function select_installation() {
-  color_echo select "$(display_hint "h_select_installation_title")"
-  install_type_list=(
-    "$(display_hint "h_select_installation_auto")"
-    "$(display_hint "h_select_installation_dropbox")"
-    "$(display_hint "h_select_installation_exit")"
-  )
-  PS3="$(display_hint "h_select_question_number"): "
-  select install_type in "${install_type_list[@]}"; do
-    case $install_type in
-    "$(display_hint "h_select_installation_auto")")
-      if [ $CPU_ARCH == "AMD64" ]; then
-        mt_link="https://cdn3.moontrader.com/beta/linux-x86_64/MoonTrader-linux-x86_64.tar.xz"
-      elif [ $CPU_ARCH == "ARM" ]; then
-        mt_link="https://cdn3.moontrader.com/beta/linux-arm64/MoonTrader-linux-arm64.tar.xz"
-      fi
-
-      mt_extention=".tar.xz"
-      break
-      ;;
-    "$(display_hint "h_select_installation_dropbox")")
-      color_echo example "https://www.dropbox.com/s/.../archive_name.tar.xz?dl=0"
-      read -p "$(display_hint "h_select_installation_dropbox_link"): " mt_link
-      while ! [[ $mt_link == *".tar.xz"* ]]; do
-        # clear
-        color_echo warning "$(display_hint "h_select_installation_dropbox_link_wrong")"
-        color_echo example "https://www.dropbox.com/s/.../...tar.xz?dl=0"
-        read -p "$(display_hint "h_select_installation_dropbox_link"): " mt_link
-      done
-      mt_link=${mt_link%?}1
-      mt_extention=".tar.xz"
-      break
-      ;;
-    "$(display_hint "h_select_installation_exit")")
-      color_echo info "$(display_hint "h_exit_error")"
-      exit 1
-      ;;
-    *)
-      color_echo warning "$(display_hint "h_select_question_wrong")"
-      ;;
-    esac
-  done
-  color_echo title "$(display_hint "h_select_installation_type"): $install_type"
-  color_echo title "$(display_hint "h_select_installation_link"): $mt_link"
-}
-
-# Функция установки пакетов и зависимостей
-function install_packages() {
-  color_echo title "$(display_hint "h_install_packages_title")"
-
-  add_pkgs=(
-    fail2ban
-    chrony
-    htop
-    mc
-    vim
-    screen
-    tmux
-    iptables-persistent
-    psmisc
-    libncurses5
-    libtommath1
-    p7zip-full
-    apt-transport-https
-  )
-
-  if [ $CPU_ARCH == "AMD64" ]; then
-    if [ "$OS_NAME" == "Debian 10" ]; then
-      wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    elif [ "$OS_NAME" == "Debian 11" ]; then
-      wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    elif [ "$OS_NAME" == "Debian 12" ]; then
-      wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    elif [ "$OS_NAME" == "Ubuntu 20.04" ]; then
-      wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    elif [ "$OS_NAME" == "Ubuntu 22.04" ]; then
-      wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-    fi
-    dpkg -i packages-microsoft-prod.deb
-    rm packages-microsoft-prod.deb
-    apt update >/dev/null 2>&1
-
-    add_pkgs+=(
-      dotnet-sdk-6.0
-      dotnet-sdk-7.0
-    )
-  fi
-
-  for pkg in "${add_pkgs[@]}"; do
-    if ! dpkg -s $pkg >/dev/null 2>&1; then
-      color_echo info "$(display_hint "h_install_packages_start"): $pkg"
-      case $pkg in
-      "fail2ban")
-        apt install -y $pkg
-        touch /etc/fail2ban/jail.local
-        echo -e "[sshd]\nport = ssh\nfindtime = 3600\nmaxretry = 3\nbantime = 86400" >/etc/fail2ban/jail.local
-        systemctl restart fail2ban
-        ;;
-      "libtommath1")
-        apt install -y $pkg
-
-        if [ $CPU_ARCH == "AMD64" ]; then
-          if [ -f "/usr/lib/x86_64-linux-gnu/libtommath.so.0" ]; then
-            rm /usr/lib/x86_64-linux-gnu/libtommath.so.0
-          fi
-          ln -s libtommath.so.1 /usr/lib/x86_64-linux-gnu/libtommath.so.0
-        elif [ $CPU_ARCH == "ARM" ]; then
-          if [ -f "/usr/lib/aarch64-linux-gnu/libtommath.so.0" ]; then
-            rm /usr/lib/x86_64-linux-gnu/libtommath.so.0
-          fi
-          ln -s libtommath.so.1 /usr/lib/aarch64-linux-gnu/libtommath.so.0
-        fi
-
-        ;;
-      *)
-        DEBIAN_FRONTEND=noninteractive apt install -y $pkg
-        ;;
-      esac
-      color_echo info "$(display_hint "h_install_packages_comlpete"): $pkg"
-    else
-      color_echo info "$(display_hint "h_install_packages_already"): $pkg"
-    fi
-  done
     local os=$(check_os)
     
     if [ "$(id -u)" != "0" ]; then
@@ -641,8 +458,8 @@ install_package() {
 # Функция обновления пакетов и зависимостей
 function update_packages() {
     log execution "$(extract_tips "h_update_packages_title")..."
-    apt update >/dev/null 2>&1 || log error "Error: Failed to update package lists."
-    DEBIAN_FRONTEND=noninteractive apt upgrade -y >/dev/null 2>&1 || log error "Error: Failed to update packages."
+    apt update || log error "Error: Failed to update package lists."
+    DEBIAN_FRONTEND=noninteractive apt upgrade -y || log error "Error: Failed to update packages."
     log success "$(extract_tips "h_update_packages_complete")"
 }
 
@@ -669,44 +486,6 @@ function remove_packages() {
     apt autoremove -y >/dev/null 2>&1 || log error "Error: Failed to remove unnecessary packages."
 }
 
-# Функция создания папки с MoonTrader
-function create_mt_folder() {
-  mt_folder="mt"
-  if [ -d "$default_user_directory/$mt_folder" ]; then
-    rm -rf "$default_user_directory/$mt_folder"
-  fi
-  mkdir "$default_user_directory/$mt_folder"
-  color_echo title "$(display_hint "h_create_mt_folder_install"): $default_user_directory/$mt_folder"
-}
-
-# Функция включения swap, если не включен
-function enable_swap() {
-  if ! free | awk '/^Swap:/ {exit !$2}'; then
-    fallocate -l 2G /swapfile
-    chmod 600 /swapfile
-    mkswap /swapfile
-    swapon /swapfile
-    bash -c 'echo "/swapfile none swap sw 0 0" >>/etc/fstab'
-  fi
-}
-
-# Функция настройки конфигурации chrony(время)
-function setup_time() {
-  # set timezone UTC+0
-  timedatectl set-timezone Etc/UTC
-  # chrony setup
-  echo -e "server 0.pool.ntp.org iburst" >/etc/chrony/chrony.conf
-  echo -e "server 1.pool.ntp.org iburst" >>/etc/chrony/chrony.conf
-  echo -e "server 2.pool.ntp.org iburst" >>/etc/chrony/chrony.conf
-  echo -e "server 3.pool.ntp.org iburst" >>/etc/chrony/chrony.conf
-  echo -e "minsources 4" >>/etc/chrony/chrony.conf
-  echo -e "maxchange 100 0 0" >>/etc/chrony/chrony.conf
-  echo -e "makestep 0.001 1" >>/etc/chrony/chrony.conf
-  echo -e "maxdrift 100" >>/etc/chrony/chrony.conf
-  echo -e "maxslewrate 100" >>/etc/chrony/chrony.conf
-  echo -e "driftfile /var/lib/chrony/drift" >>/etc/chrony/chrony.conf
-  echo -e "rtcsync" >>/etc/chrony/chrony.conf
-  systemctl restart chronyd
 # Function to install .NET SDK or runtime and a specific .NET runtime version
 # https://learn.microsoft.com/en-us/dotnet/core/install/linux-package-mixup?pivots=os-linux-ubuntu#i-need-a-version-of-net-that-isnt-provided-by-my-linux-distribution
 install_dotnet() {
@@ -739,59 +518,25 @@ install_dotnet() {
 
 # Function to install the Fail2Ban package and configure it
 function setup_firewall() {
-  if ! iptables -nL | grep 4242 >/dev/null 2>&1; then
-    color_echo title "$(display_hint "h_setup_firewall_title")"
-    iptables -F
-    iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-    iptables -A INPUT -m state --state INVALID -j DROP
-    iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
-    iptables -A INPUT -p udp --dport 4242 -j ACCEPT
-    iptables -A INPUT -p tcp --dport ssh -j ACCEPT
-    iptables -A INPUT -i lo -j ACCEPT
-    iptables -A INPUT -j DROP
-    netfilter-persistent save
-    color_echo title "$(display_hint "h_setup_firewall_setup"): Ping,SSH,4242udp"
-  else
-    color_echo title "$(display_hint "h_setup_firewall_enabled"): Ping,SSH,4242udp"
-  fi
+    log execution "$(extract_tips "h_setup_firewall_execute")"
+    if ! iptables -nL | grep 42422 >/dev/null 2>&1; then
+        iptables -F
+        iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+        iptables -A INPUT -m state --state INVALID -j DROP
+        iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+        iptables -A INPUT -p udp --dport 42422 -j ACCEPT
+        iptables -A INPUT -p tcp --dport ssh -j ACCEPT
+        iptables -A INPUT -i lo -j ACCEPT
+        iptables -A INPUT -j DROP
+        netfilter-persistent save >/dev/null 2>&1 || log error "Error: Failed to save the firewall rules."
+        log success "$(extract_tips "h_setup_firewall_complete"): Ping,SSH,42422udp"
+    else
+        log success "$(extract_tips "h_setup_firewall_already"): Ping,SSH,42422udp"
+    fi
 }
 
 # Function to install the MoonTrader trading terminal core
 function install_mt() {
-  color_echo title "$(display_hint "h_install_mt_title")"
-
-  if [ $mt_extention == ".tar.xz" ]; then
-    wget -O MoonTrader-linux-x86_64.tar.xz $mt_link && tar -xpJf MoonTrader-linux-x86_64.tar.xz -C "$default_user_directory/$mt_folder"
-    rm MoonTrader-linux-x86_64.tar.xz
-  elif [ $mt_extention == ".7z" ]; then
-    wget -O MoonTrader-linux-x86_64.7z $mt_link && 7z x "-o${default_user_directory}/${mt_folder}" MoonTrader-linux-x86_64.7z
-    rm MoonTrader-linux-x86_64.7z
-  fi
-  color_echo info "$(display_hint "h_install_mt_download")"
-
-  # Создание файла запуска MTCore для корректного обновления MoonTrader при запуске из usr/bin
-  if [ -f "$default_user_directory/$mt_folder/MTCore" ] && [ ! -f "$default_user_directory/$mt_folder/start_mt.sh" ]; then
-    chmod +x "$default_user_directory/$mt_folder/MTCore"
-    touch $default_user_directory/$mt_folder/start_mt.sh && chmod +x $default_user_directory/$mt_folder/start_mt.sh
-    # ToDo сделать запись строк в файл как-то красивее...
-    echo -e "if [ -n \"\$1\" ]; then" >$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "    if [ \"\$1\" == \"--no-update\" ]; then" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "        cd $default_user_directory/$mt_folder" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "        ./MTCore --no-update" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "    else" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "        cd $default_user_directory/$mt_folder" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "        $default_user_directory/$mt_folder/MTCore" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "    fi" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "else" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "    cd $default_user_directory/$mt_folder" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "    $default_user_directory/$mt_folder/MTCore" >>$default_user_directory/$mt_folder/start_mt.sh
-    echo -e "fi" >>$default_user_directory/$mt_folder/start_mt.sh
-
-    rm /usr/bin/mt >/dev/null 2>&1
-    ln -s "$default_user_directory/$mt_folder/start_mt.sh" /usr/bin/mt
-  fi
-  chown -R $default_user:$default_user "$default_user_directory/$mt_folder"
-  color_echo info "$(display_hint "h_install_mt_complete")"
     log execution "$(extract_tips "h_install_mt_execute")"
     local user=$1
     local folder="$2/moontrader"
@@ -957,20 +702,53 @@ enable_swap
 
 remove_packages
 update_packages
-enable_swap
-setup_time
-setup_firewall
-install_mt
 
-clear
-color_echo title "$(display_hint "h_complete_install_title")"
-color_echo info "$(display_hint "h_complete_install_os"): $OS_NAME"
-color_echo info "$(display_hint "h_complete_install_user"): $default_user"
-color_echo info "$(display_hint "h_complete_install_dir"): $default_user_directory/$mt_folder"
-color_echo info "$(display_hint "h_complete_install_firewall"): Ping,SSH,42422udp"
-color_echo info "$(display_hint "h_complete_install_fail2ban")"
-color_echo warning "$(display_hint "h_complete_install_waring")"
-color_echo info "$(display_hint "h_complete_install_start"): mt"
-color_echo warning "$(display_hint "h_complete_install_reboot")"
+install_package "apt-transport-https"
+install_package "dmidecode"
+install_package "htop"
+install_package "mc"
+install_package "tmux"
+install_package "screen"
+install_package "psmisc"
+install_package "libncurses6"
+install_package "libtommath1"
+install_package "p7zip-full"
+install_package "git"
+
+# install_dotnet 6.0
+# install_dotnet 7.0
+# install_dotnet 8.0
+
+# Install the necessary packages and dependencies
+if [[ $SETUP_TIME -eq 1 ]]; then
+    install_package "chrony"
+    setup_time
+fi
+
+if [[ $SETUP_FIREWALL -eq 1 ]]; then
+    install_package "iptables-persistent"
+    setup_firewall
+fi
+
+if [[ $SETUP_FAIL2BAN -eq 1 ]]; then
+    install_package "fail2ban"
+fi
+
+if [[ $SETUP_MT_GUARDIAN -eq 1 ]]; then
+    setup_mtguardian
+fi
+
+install_mt "$DEFAULT_USER" "$DEFAULT_USER_DIRECTORY" "$SETUP_MT_LINK"
+
+
+log title "$(extract_tips "h_complete_install_title")"
+log info "$(extract_tips "h_complete_install_os"): $CPU_ARCH $OS_NAME"
+log info "$(extract_tips "h_complete_install_user"): $DEFAULT_USER"
+log info "$(extract_tips "h_complete_install_dir"): $DEFAULT_USER_DIRECTORY/moontrader"
+echo
+log hint "$(extract_tips "h_complete_install_start"): MoonTrader"
+log hint "$(extract_tips "h_complete_install_waring")"
+echo
+log warning "$(extract_tips "h_complete_install_reboot")"
 read -n 1
 reboot
