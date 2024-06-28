@@ -212,6 +212,8 @@ function check_os() {
                 OS_NAME="Ubuntu 22.04"
                 elif [ "$VERSION_ID" = "24.04" ]; then
                 OS_NAME="Ubuntu 24.04"
+                elif [ "$VERSION_ID" = "12" ]; then
+                OS_NAME="Debian 12"
             else
                 log error "$(extract_tips "h_check_os_wrong")"
             fi
