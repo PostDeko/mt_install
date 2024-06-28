@@ -222,6 +222,7 @@ function check_os() {
             else
               log error "$(extract_tips "h_check_os_wrong")"
             fi
+          fi
         fi
     fi
 }
